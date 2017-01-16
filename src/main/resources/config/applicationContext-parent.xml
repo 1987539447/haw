@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--之所以采用父子上下文的模式加载配置文件主要是为了使用shiro，shiro只能采用spring lintener先初始化上下文并加载
+shiro的filterBean，再加载spring的filter，如果只采用spring mvc的servlet就无法再filter之前注入
+shiro需要的bean，没法初始化spring上下文。所以才采用父子上下文的方式加载。
+父上下文（spring listener）：加载 service、持久、事务、安全等的配置文件；
+子上下文（spring mvc serlvet）：加载mvc相关的表现出支持；
+
+子上下文可以访问父上下文的bean；
+父上下文不能访问子上下文的bean
+=====================================================================================================
+web 加载顺序：
+listener->filter->servlet
+-->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx.xsd
+	    http://www.springframework.org/schema/mvc
+         http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop.xsd"
+       default-lazy-init="false">
+
+    <!--国际化支持-->
+    <bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+        <property name="basenames">
+            <list>
+                <!--messages 目录下面已messages开头的文件-->
+                <value>messages/messages</value>
+            </list>
+        </property>
+    </bean>
+
+    <!-- 扫描的包路径 去掉mvc的注解
+    原因:由于父容器需要加载除了controller层以外的所有层注解,所以必须要有component-scan-->
+    <context:component-scan base-package="com.bigknow">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+
+    <!--加载其父容器的配置文件-->
+    <import resource="classpath*:/config/applicationContext-parent-*.xml"/>
+
+    <!--加载props配置文件-->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <value>classpath:config/props/*.properties</value>
+        </property>
+    </bean>
+
+</beans>

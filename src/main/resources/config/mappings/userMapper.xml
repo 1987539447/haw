@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bigknow.system.mapper.UserMapper">
+    <resultMap id="userMap" type="user">
+        <id column="id" property="id"></id>
+        <result column="name" property="name"/>
+        <result column="workno" property="workno"/>
+        <result column="account" property="account"/>
+        <result column="password" property="password"/>
+        <result column="cardno" property="cardno"/>
+        <result column="age" property="age"/>
+        <result column="sex" property="sex"/>
+        <result column="phone" property="phone"/>
+        <result column="mobile" property="mobile"/>
+        <result column="email" property="email"/>
+        <result column="address" property="address"/>
+        <result column="gradeId" property="gradeId"/>
+        <result column="eduName" property="eduName"/>
+        <result column="fireName" property="fireName"/>
+        <result column="firePhone" property="firePhone"/>
+        <result column="description" property="description"/>
+        <result column="weixinId" property="weixinId"/>
+        <result column="state" property="state"/>
+        <result column="cityId" property="cityId"/>
+    </resultMap>
+
+    <select id="select" parameterType="String" resultMap="userMap">
+    select * from t_user where id =#{id}
+    </select>
+    <select id="selectAll" parameterType="user" resultMap="userMap">
+        select * from t_user
+            <choose>
+                <!--模糊查找-->
+                <when test="fuzzyField!=null and fuzzyField!=''">
+                    <!--id like '%${fuzzyField}%' or-->
+                    where name like '%${fuzzyField}%' or workno like
+                    '%${fuzzyField}%' or account like '%${fuzzyField}%'
+                </when>
+                <!--条件查找-->
+                <otherwise>
+                        <where>
+                        <if test="name!=null">
+                            name LIKE '%${name}%'
+                        </if>
+                        <if test="phone!=null">
+                            or workno LIKE '%${workno}%'
+                        </if>
+                        <if test="account!=null">
+                            or account LIKE '%${account}%'
+                        </if>
+                    </where>
+                </otherwise>
+            </choose>
+            <if test="orderByName!=null">order by #{orderByName} </if>
+            <if test="orderBy!=null">#{orderBy}</if>
+    </select>
+
+    <insert id="insert" parameterType="user">
+        INSERT INTO t_user
+        (`id`,
+        `name`,
+        `workno`,
+        `account`,
+        `password`,
+        `cardno`,
+        `age`,
+        `sex`,
+        `phone`,
+        `mobile`,
+        `email`,
+        `address`,
+        `gradeId`,
+        `eduName`,
+        `fireName`,
+        `firePhone`,
+        `description`,
+        `weixinId`,
+        `state`,
+        `cityId`)
+        VALUES
+        (
+        #{id},
+        #{name},
+        #{workno},
+        #{account},
+        #{password},
+        #{cardno},
+        #{age},
+        #{sex},
+        #{phone},
+        #{mobile},
+        #{email},
+        #{address},
+        #{gradeId},
+        #{eduName},
+        #{fireName},
+        #{firePhone},
+        #{description},
+        #{weixinId},
+        #{state},
+        #{cityId}
+        )
+    </insert>
+    <update id="update" parameterType="user">
+        UPDATE t_user
+        <trim prefix="set" suffixOverrides=",">
+        <if test="name!=null">`name` = #{name},</if>
+            <if test="workno!=null">`workno` = #{workno},</if>
+            <if test="account!=null">`account` = #{account},</if>
+            <if test="password!=null">`password` = #{password},</if>
+            <if test="cardno!=null"> `cardno` = #{cardno},</if>
+            <if test="age!=null">`age` = #{age},</if>
+            <if test="sex!=null"> `sex` = #{sex},</if>
+            <if test="phone!=null"> `phone` = #{phone},</if>
+            <if test="mobile!=null"> `mobile` =#{mobile},</if>
+            <if test="email!=null"> `email` = #{email},</if>
+            <if test="address!=null"> `address` = #{address},</if>
+            <if test="gradeId!=null"> `gradeId` = #{gradeId},</if>
+            <if test="eduName!=null"> `eduName` = #{eduName},</if>
+            <if test="fireName!=null"> `fireName` = #{fireName},</if>
+            <if test="firePhone!=null"> `firePhone` =#{firePhone},</if>
+            <if test="description!=null"> `description` = #{description},</if>
+            <if test="weixinId!=null"> `weixinId` = #{weixinId},</if>
+            <if test="state!=null"> `state` = #{state},</if>
+            <if test="cityId!=null and cityId!=0"> `cityId` = #{cityId}</if>
+        </trim>
+        WHERE `id` = #{id}
+    </update>
+    <delete id="delete" parameterType="String">
+        DELETE FROM t_user WHERE id = #{id};
+    </delete>
+</mapper>

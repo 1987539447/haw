@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bigknow.system.mapper.UserOrgLinkMapper">
+    <resultMap id="userOrgLinkMap" type="userOrgLink">
+        <id column="id" property="id"></id>
+        <result column="userId" property="userId"></result>
+        <result column="orgId" property="orgId"></result>
+        <result column="manager" property="manager"></result>
+    </resultMap>
+
+    <insert id="insert" parameterType="userOrgLink">
+        INSERT INTO t_user_org
+        (`id`,
+        `userId`,
+        `orgId`,
+        `manager`)
+        VALUES
+        (#{id},
+        #{userId},
+        #{orgId},
+        #{manager})
+    </insert>
+    <update id="update" parameterType="userOrgLink">
+        <!--没用的更新，这里做屏蔽处理-->
+        select 1=1
+    </update>
+    <delete id="delete" parameterType="String">
+        <!--没用的更新，这里做屏蔽处理-->
+        select 1=1
+    </delete>
+    <select id="select" parameterType="String" resultType="userOrgLink">
+        select * from t_user_org where id = #{id}
+    </select>
+    <select id="selectAll" resultMap="userOrgLinkMap">
+        select * from t_user_org
+    </select>
+
+    <!--业务需要扩展的方法-->
+    <delete id="deleteByUserId" parameterType="String">
+        DELETE FROM t_user_org
+        WHERE userId = #{id}
+    </delete>
+    <delete id="deleteByOrgId" parameterType="String">
+        DELETE FROM t_user_org
+        WHERE orgId = #{id}
+    </delete>
+
+    <select id="selectUsersByOrgId" parameterType="String" resultMap="com.bigknow.system.mapper.UserMapper.userMap">
+        select u.* from t_user u,t_user_org t where t.userId = u.id
+        and t.orgId = #{orgId}
+    </select>
+
+    <select id="selectAllUsersByOrgId" parameterType="String" resultMap="com.bigknow.system.mapper.UserMapper.userMap">
+        select u.* from t_user u,t_user_org t,t_org o where t.userId = u.id and o.id = t.orgId and o.comcode
+        like CONCAT((select comcode from t_org where id = #{orgId}),'%')
+    </select>
+
+    <select id="selectOrgsByUserId" parameterType="String" resultMap="com.bigknow.system.mapper.OrgMapper.orgMap">
+        select o.* from t_org o,t_user_org t where t.userId = #{userId} and t.orgId = o.id
+    </select>
+
+    <select id="selectUsersCountByOrgId" parameterType="String" resultType="Integer">
+        select count(1) from t_user_org where orgId = #{id}
+    </select>
+
+</mapper>

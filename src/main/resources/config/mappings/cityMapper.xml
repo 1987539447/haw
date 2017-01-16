@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bigknow.system.mapper.CityMapper">
+    <resultMap id="cityMap" type="city">
+        <id column="id" property="cityId"></id>
+        <result column="areaname" property="areaname"/>
+        <result column="parentid" property="parentid"/>
+        <result column="parentname" property="parentname"/>
+        <result column="shortname" property="shortname"/>
+        <result column="lng" property="lng"/>
+        <result column="lat" property="lat"/>
+        <result column="level" property="level"/>
+    </resultMap>
+    <select id="select" parameterType="Integer" resultMap="cityMap">
+        select t2.areaname as parentname,t.* from t_city_dict t left join t_city_dict t2 on t.parentid = t2.id where t.id=#{cityId}
+    </select>
+    <select id="selectAllWithNoParm" resultMap="cityMap">
+        select id,areaname,parentid from t_city_dict;
+    </select>
+    <select id="selectAll" parameterType="city" resultMap="cityMap">
+        select t2.areaname as parentname,t.* from t_city_dict t left join t_city_dict t2 on t.parentid = t2.id
+        <choose>
+            <!--模糊查找-->
+            <when test="fuzzyField!=null and fuzzyField!=''">
+                <!--id like '%${fuzzyField}%' or-->
+                where t.areaname like '%${fuzzyField}%' or t.shortname like
+                '%${fuzzyField}%' or t2.areaname like '%${fuzzyField}%' /*这里不能直接写parentname 分页后他是找不到的*/
+            </when>
+            <!--条件查找-->
+            <otherwise>
+                <where>
+                    <if test="areaname!=null">
+                        areaname LIKE '%${areaname}%'
+                    </if>
+                    <if test="shortname!=null">
+                        or shortname LIKE '%${shortname}%'
+                    </if>
+                    <if test="parentname!=null">
+                        or parentname LIKE '%${parentname}%'
+                    </if>
+                </where>
+            </otherwise>
+        </choose>
+        <if test="orderByName!=null">order by #{orderByName} </if>
+        <if test="orderBy!=null">#{orderBy}</if>
+    </select>
+    <insert id="insert" parameterType="city">
+        INSERT INTO t_city_dict
+        (`id`,
+        `areaname`,
+        `parentid`,
+        `shortname`,
+        `lng`,
+        `lat`,
+        `level`)
+        VALUES
+        (
+        #{cityId},
+        #{areaname},
+        #{parentid},
+        #{shortname},
+        #{lng},
+        #{lat},
+        #{level})
+    </insert>
+    <update id="update" parameterType="city">
+        UPDATE t_city_dict
+        <trim prefix="set" suffixOverrides=",">
+            <if test="areaname!=null">`areaname` = #{areaname},</if>
+            <if test="parentid!=null">`parentid` = #{parentid},</if>
+            <if test="shortname!=null">`shortname` = #{shortname},</if>
+            <if test="lng!=null">`lng` = #{lng},</if>
+            <if test="lat!=null"> `lat` = #{lat},</if>
+            <if test="level!=null">`level` = #{level},</if>
+        </trim>
+        WHERE `id` = #{cityId}
+    </update>
+    <delete id="delete" parameterType="Integer">
+        DELETE FROM t_city_dict WHERE id = #{cityId};
+    </delete>
+
+    <select id="selectByCityName" parameterType="String" resultMap="cityMap">
+        select * from t_city_dict where areaname=#{name} or shortname=#{name}
+    </select>
+</mapper>

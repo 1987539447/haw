@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd"
+       default-lazy-init="false">
+
+    <bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+        <property name="configLocation" value="classpath:config/cache/ehcache.xml"/>
+        <property name="shared" value="true"></property> <!-- 这里是关键！！！没有必错  -->
+    </bean>
+    <!-- MyBatis使用ehcache缓存 end-->
+
+    <!--cache-->
+    <bean id="shiroCacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+        <property name="cacheManager" ref="cacheManager"/>
+    </bean>
+
+    <!-- 权限管理器 -->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <!-- 数据库认证的实现 org.springrain.frame.shiro.ShiroDbRealm -->
+        <property name="realm" ref="securityRealm"/>
+        <!-- session 管理器 -->
+        <property name="sessionManager" ref="sessionManager"/>
+        <!-- 缓存管理器 -->
+        <property name="cacheManager" ref="shiroCacheManager"/>
+        <!--remremberMe Cookie-->
+        <property name="rememberMeManager" ref="rememberMeManager"/>
+    </bean>
+
+    <bean id="sessionManager"
+          class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+        <!-- 超时时间 20分钟 -->
+        <property name="globalSessionTimeout" value="1200000"/><!--1200000-->
+        <!-- session存储的实现 -->
+        <property name="sessionDAO" ref="shiroSessionDao"/>
+        <!-- sessionIdCookie的实现,用于重写覆盖容器默认的JSESSIONID -->
+        <property name="sessionIdCookie" ref="sharesession"/>
+        <!-- 定时检查失效的session -->
+        <property name="sessionValidationSchedulerEnabled" value="true"/>
+
+    </bean>
+
+    <!-- sessionIdCookie的实现,用于重写覆盖容器默认的JSESSIONID -->
+    <bean id="sharesession" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <!-- cookie的name,对应的默认是 JSESSIONID -->
+        <constructor-arg name="name" value="SHAREJSESSIONID"/>
+        <!-- jsessionId的path为 / 用于多个系统共享jsessionId -->
+        <property name="path" value="/"/>
+    </bean>
+
+    <!--rememberMe cookie -->
+    <bean id="rememberMe" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <constructor-arg name="name" value="rememberMe"/>
+        <property name="maxAge" value="2592000"/><!--30天-->
+    </bean>
+    <bean id="rememberMeManager" class="org.apache.shiro.web.mgt.CookieRememberMeManager">
+        <property name="cookie" ref = "rememberMe"/>
+    </bean>
+
+    <bean id="shiroSessionDao" class="org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO"/>
+
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <!-- Shiro的核心安全接口,这个属性是必须的 -->
+        <property name="securityManager" ref="securityManager"/>
+        <!-- 要求登录时的链接(可根据项目的URL进行替换),非必须的属性,默认会自动寻找Web工程根目录下的"/login.jsp"页面
+         当认证不通过的时候回自动跳转到登陆页面,注意在 filterChainDefinitions属性中:loginUrl 必须配置成如下:
+           /login=authc
+           类似的方式,如果配置为anon,filter就不会拦截此url,等于没有用-->
+        <property name="loginUrl" value="/login"/>
+        <!-- 登录成功后要跳转的连接;说明:一般采用FormAuthenticationFilter等方式就需要配置,否则第一次登陆的时候由于还没有认证,触发认证
+        操作,之后由于没有配置successUrl,就不会将请求转发到controller,第二次请求过来后,由于已经得到认证,filter
+        跳过认证,controller才能够正常处理,所以一定配置successUrl,但是如果不采用filter方式认证,换用
+        在controller中认证就不需要配置了-->
+        <property name="successUrl" value="/login"/>
+        <!-- 用户访问未对其授权的资源时,所显示的连接 -->
+        <property name="unauthorizedUrl" value="/"/>
+
+        <property name="filters">
+            <map>
+                <entry key="authc" value-ref="captchaFormAuthenticationFilter"/>
+            </map>
+        </property>
+
+        <!-- Shiro连接约束配置,即过滤链的定义 -->
+        <!-- 此处可配合我的这篇文章来理解各个过滤连的作用http://blog.csdn.net/jadyer/article/details/12172839 -->
+        <!-- 下面value值的第一个'/'代表的路径是相对于HttpServletRequest.getContextPath()的值来的 -->
+        <!-- anon：它对应的过滤器里面是空的,什么都没做,这里.do和.jsp后面的*表示参数,比方说login.jsp?main这种 -->
+        <!-- authc：该过滤器下的页面必须验证后才能访问,它是Shiro内置的一个拦截器org.apache.shiro.web.filter.authc.FormAuthenticationFilter -->
+        <property name="filterChainDefinitions">
+            <!--anon代表不予要认证,authc表示需要认证登录后的用户才能访问,user表示rememberMe的用户和已经登认证的用户可以访问-->
+            <value>
+                /=anon
+                /assets/**=anon
+                /logout=anon
+                /login_=anon
+                /error=anon
+                /getCaptcha=anon
+                /system/**=authc
+                /monitor/**=authc
+                /common/**=authc
+                /login=authc
+                /test=user
+            </value>
+        </property>
+
+    </bean>
+    <!-- 基于Form表单的身份验证过滤器,集成了验证码验证,rememberMe功能,集成shiro的FormAuthenticationFilter-->
+    <bean id="captchaFormAuthenticationFilter"
+          class="com.bigknow.frame.security.CaptchaFormAuthenticationFilter">
+        <property name="usernameParam" value="username"/>
+        <property name="passwordParam" value="password"/>
+        <property name="rememberMeParam" value="remember_me"/>
+        <property name="loginUrl" value="/login"/>
+    </bean>
+
+    <!--用于realm 加密的类,默认这次重试次数检测,如果从事次数超过5次,锁定1小时,
+    继承hashedCredentialsMatcher后可以加入salt,但必须是
+    SaltedAuthenticationInfo 类型的info,所以在realm认证方法返回的时候注意创建的info类型
+    SimpleAuthenticationInfo实现了 SaltedAuthenticationInfo接口
+    -->
+    <bean id="credentialsMatcher" class="com.bigknow.frame.security.RetryLimitHashedCredentialsMatcher">
+        <property name="hashAlgorithmName">
+            <value>${hashAlgorithmName}</value>
+        </property>
+        <property name="hashIterations">
+            <value>${hashIterations}</value>
+        </property>
+    </bean>
+
+</beans>

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--子上下文入口配置文件-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+		http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans.xsd 
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx.xsd 
+	    http://www.springframework.org/schema/mvc
+         http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/context 
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop.xsd"
+       default-lazy-init="false">
+
+    <!--注释方式spring配置和mvc所需要的配置，<context:component-scan> 使所有继承component的注释元素生效，注意-->
+    <mvc:annotation-driven>
+        <mvc:message-converters register-defaults="true">
+
+            <!--
+            <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+                <constructor-arg value="UTF-8"/>
+            </bean>
+                <property name="supportedMediaTypes">
+                    <list>
+                        <value>text/html;charset=UTF-8</value>
+                        <value>application/json</value>
+                    </list>
+                </property>
+            -->
+
+            <bean class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+            </bean>
+
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+
+    <!-- 只扫描Controller 注解,原因:父上下文加载service以及以下层的组件,只有controller层需要
+     子容器加载,避免重复加载-->
+    <context:component-scan base-package="com.bigknow"
+                            use-default-filters="false">
+        <context:include-filter type="annotation"
+                                expression="org.springframework.stereotype.Controller" />
+    </context:component-scan>
+
+    <!--采用resources元素来处理一般类型的资源，避免一般类型的资源采用标准的配置的Resolver来处理-->
+    <mvc:resources mapping="/assets/fonts/**" location="/assets/fonts/"/>
+    <mvc:resources mapping="/assets/javascripts/**" location="/assets/javascripts/"/>
+    <mvc:resources mapping="/assets/stylesheets/**" location="/assets/stylesheets/"/>
+    <mvc:resources mapping="/assets/images/**" location="/assets/images/"/>
+    <mvc:resources mapping="/html/**" location="/html/"/>
+
+    <!-- 全局异常配置 start --><!--已经在baseController中配置@ExceptionHandler,所以这里就不用了-->
+<!--    <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+        <property name="exceptionMappings">
+            <props>
+                <prop key="java.lang.Exception">/common/500</prop>
+                <prop key="java.lang.Throwable">/common/404</prop>
+            </props>
+        </property>
+        &lt;!&ndash;定义异常处理页面用来获取异常信息的变量名，默认名value为exception&ndash;&gt;
+        <property name="exceptionAttribute" value="ex"></property>
+        &lt;!&ndash; 设置日志输出级别，不定义则默认不输出警告等错误日志信息 &ndash;&gt;
+        <property name="warnLogCategory" value="WARN"></property>
+        &lt;!&ndash; 默认错误页面，当找不到上面mappings中指定的异常对应视图时，使用本默认配置 &ndash;&gt;
+        <property name="defaultErrorView" value="error"></property>
+        &lt;!&ndash; 默认HTTP状态码 &ndash;&gt;
+        <property name="defaultStatusCode" value="500"></property>
+    </bean>-->
+    <!-- 全局异常配置 end -->
+
+    <!--文件处理的resolver-->
+    <bean id="multipartResolver"
+          class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="defaultEncoding" value="UTF-8"/>
+        <!-- 默认编码 (ISO-8859-1) -->
+        <property name="maxInMemorySize" value="10240"/>
+        <!-- 最大内存大小 (10240) -->
+        <property name="uploadTempDir" value="/upload"/>
+        <!-- 上传后的目录名 (WebUtils#TEMP_DIR_CONTEXT_ATTRIBUTE) -->
+        <property name="maxUploadSize" value="10485760"/>
+        <!-- 最大文件大小，-1为无限止(-1) -->
+    </bean>
+
+    <bean id="jspViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="viewClass"  value="org.springframework.web.servlet.view.JstlView" />
+        <property name="suffix"  value=".jsp"/>
+        <property name="order" value="1" />
+    </bean>
+
+    <!--处理.xml请求 ,注意spring mvc默认就加入了json的支持,所以不用在这里定义-->
+    <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+        <property name="order" value="2" />
+
+        <property name="defaultViews">
+            <list>
+                <!-- JAXB XML View -->
+                <bean class="org.springframework.web.servlet.view.xml.MarshallingView">
+                    <constructor-arg>
+                        <bean class="org.springframework.oxm.jaxb.Jaxb2Marshaller">
+                            <property name="classesToBeBound">
+                                <list>
+                                    <value>com.bigknow.system.entity.User</value>
+                                    <value>com.bigknow.system.entity.UserOrgLink</value>
+                                    <value>com.bigknow.system.entity.Role</value>
+                                    <value>com.bigknow.system.entity.RoleMenuLink</value>
+                                    <value>com.bigknow.system.entity.UserRoleLink</value>
+                                    <value>com.bigknow.system.entity.Menu</value>
+                                    <value>com.bigknow.system.entity.AuditLog</value>
+                                </list>
+                            </property>
+                        </bean>
+                    </constructor-arg>
+                </bean>
+
+                <!--html-->
+
+            </list>
+        </property>
+    </bean>
+
+
+    <!--加载其他spring配置文件-->
+    <import resource="classpath*:/config/applicationContext-child-template.xml"/>
+
+</beans>

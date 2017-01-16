@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bigknow.system.mapper.MenuMapper">
+    <resultMap id="menuMap" type="menu">
+        <id column="id" property="id"></id>
+        <result column="name" property="name"/>
+        <result column="pid" property="pid"/>
+        <result column="description" property="description"/>
+        <result column="pageurl" property="pageurl"/>
+        <result column="type" property="type"/>
+        <result column="state" property="state"/>
+        <result column="sort" property="sort"/>
+        <result column="icon0" property="icon0"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="menu">
+        INSERT INTO t_menu
+        (`id`,
+        `name`,
+        `pid`,
+        `description`,
+        `pageurl`,
+        `type`,
+        `state`,
+        `sort`,
+        `icon0`)
+        VALUES
+        (#{id},
+        #{name},
+        #{pid},
+        #{description},
+        #{pageurl},
+        #{type},
+        #{state},
+        #{sort},
+        #{icon0});
+    </insert>
+    <update id="update" parameterType="menu">
+        UPDATE t_menu
+        <trim prefix="set" suffixOverrides=",">
+            <if test="name!=null">`name` = #{name},</if>
+            <if test="pid!=null">`pid` = #{pid},</if>
+            <if test="description!=null">`description` = #{description},</if>
+            <if test="pageurl!=null">`pageurl` = #{pageurl},</if>
+            <if test="type!=null">`type` = #{type},</if>
+            <if test="state!=null">`state` = #{state},</if>
+            <if test="sort!=null">`sort` = #{sort},</if>
+            <if test="icon0!=null">`icon0` = #{icon0}</if>
+        </trim>
+        WHERE `id` = #{id};
+    </update>
+    <delete id="delete" parameterType="String">
+        delete from t_menu where id = #{id}
+    </delete>
+    <select id="select" parameterType="String" resultType="menu">
+        select * from t_menu where id = #{id}
+    </select>
+    <select id="selectParent" parameterType="String" resultType="menu">
+        select * from t_menu where pid = #{id}
+    </select>
+    <select id="selectAll" parameterType="menu" resultMap="menuMap">
+        select * from t_menu
+        <choose>
+            <when test="fuzzyField!=null">
+                where id like '%${fuzzyField}%' or name like '%${fuzzyField}%' or pageurl like '%${fuzzyField}%'
+            </when>
+            <otherwise>
+                <where>
+                    <if test="id!=null">
+                        id = #{id}
+                    </if>
+                    <if test="name!=null">
+                        and name =#{name}
+                    </if>
+                    <if test="pageurl!=null">
+                        and pageurl=#{pageurl}
+                    </if>
+                </where>
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="selectAllWithNoParm" resultMap="menuMap">
+        select * from t_menu
+    </select>
+</mapper>

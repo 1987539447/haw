@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bigknow.system.mapper.OrgMapper">
+    <resultMap id="orgMap" type="com.bigknow.system.entity.Org">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="comcode" property="comcode"/>
+        <result column="pid" property="pid"/>
+        <result column="sysid" property="sysid"/>
+        <result column="type" property="type"/>
+        <result column="leaf" property="leaf"/>
+        <result column="sortno" property="sortno"/>
+        <result column="description" property="description"/>
+        <result column="state" property="state"/>
+
+    </resultMap>
+
+    <select id="select" parameterType="String" resultMap="orgMap">
+        select * from t_org where id = #{id}
+    </select>
+    <delete id="delete" parameterType="String">
+        delete from t_org where id = #{id}
+    </delete>
+    <insert id="insert" parameterType="org">
+        INSERT INTO t_org
+        (`id`,
+        `name`,
+        `comcode`,
+        `pid`,
+        `sysid`,
+        `type`,
+        `leaf`,
+        `sortno`,
+        `description`,
+        `state`)
+        VALUES
+        (#{id},
+         #{name},
+         #{comcode},
+         #{pid},
+         #{sysid},
+         #{type},
+         #{leaf},
+         #{sortno},
+         #{description},
+         #{state});
+    </insert>
+    <update id="update" parameterType="org">
+        UPDATE t_org
+        <trim prefix="set" suffixOverrides=",">
+        <if test="name!=null"> `name` = #{name},</if>
+        <if test="comcode!=null"> `comcode` = #{comcode},</if>
+        <if test="pid!=null">`pid` = #{pid},</if>
+        <if test="sysid!=null"> `sysid` = #{sysid},</if>
+        <if test="type!=null">`type` = #{type},</if>
+        <if test="leaf!=null"> `leaf` = #{leaf},</if>
+        <if test="sortno!=null"> `sortno` = #{sortno},</if>
+        <if test="description!=null"> `description` = #{description},</if>
+        <if test="state!=null"> `state` = #{state}</if>
+        </trim>
+         WHERE `id` = #{id};
+    </update>
+
+    <!--模糊查询-->
+    <select id="selectAll" parameterType="org" resultMap="orgMap">
+        select * from t_org
+        <choose>
+            <!--模糊查询-->
+            <when test="fuzzyField!=null">
+                where name like '%${fuzzyField}%' or comcode like '%{fuzzyField}%'
+            </when>
+            <!--条件查询-->
+            <otherwise>
+                <where>
+                    <if test="name!=null">
+                        name = #{name}
+                    </if>
+                    <if test="comcode!=null">
+                        and comcode = #{comcode}
+                    </if>
+                </where>
+            </otherwise>
+        </choose>
+        <if test="orderByName!=null">order by #{orderByName} </if>
+        <if test="orderBy!=null">#{orderBy}</if>
+    </select>
+
+    <select id="selectAllWithNoParm" resultMap="orgMap">
+        select * from t_org
+    </select>
+</mapper>
